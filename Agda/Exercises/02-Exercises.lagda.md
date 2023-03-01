@@ -35,10 +35,10 @@ open import sums
 Prove
 ```agda
 uncurry : {A B X : Type} → (A → B → X) → (A × B → X)
-uncurry = {!!}
+uncurry f (a , b) = f a b
 
 curry : {A B X : Type} → (A × B → X) → (A → B → X)
-curry = {!!}
+curry f a b = f (a , b)
 ```
 You might know these functions from programming e.g. in Haskell.
 But what do they say under the propositions-as-types interpretation?
@@ -49,38 +49,40 @@ But what do they say under the propositions-as-types interpretation?
 Consider the following goals:
 ```agda
 [i] : {A B C : Type} → (A × B) ∔ C → (A ∔ C) × (B ∔ C)
-[i] = {!!}
+[i] (inl (a , b)) = inl a , inl b
+[i] (inr c)       = inr c , inr c
 
 [ii] : {A B C : Type} → (A ∔ B) × C → (A × C) ∔ (B × C)
-[ii] = {!!}
+[ii] (inl a , c) = inl (a , c)
+[ii] (inr b , c) = inr (b , c)
 
 [iii] : {A B : Type} → ¬ (A ∔ B) → ¬ A × ¬ B
-[iii] = {!!}
+[iii] f = f ∘ inl , f ∘ inr
 
 [iv] : {A B : Type} → ¬ (A × B) → ¬ A ∔ ¬ B
-[iv] = {!!}
+[iv] = {!!} -- cannot
 
 [v] : {A B : Type} → (A → B) → ¬ B → ¬ A
-[v] = {!!}
+[v] f ¬b = ¬b ∘ f
 
 [vi] : {A B : Type} → (¬ A → ¬ B) → B → A
-[vi] = {!!}
+[vi] = {!!} -- cannot
 
 [vii] : {A B : Type} → ((A → B) → A) → A
-[vii] = {!!}
+[vii] = {!!} -- cannot
 
 [viii] : {A : Type} {B : A → Type}
     → ¬ (Σ a ꞉ A , B a) → (a : A) → ¬ B a
-[viii] = {!!}
+[viii] ¬ab a b = ¬ab (a , b)
 
 [ix] : {A : Type} {B : A → Type}
     → ¬ ((a : A) → B a) → (Σ a ꞉ A , ¬ B a)
-[ix] = {!!}
+[ix] = {!!} -- cannot
 
 [x] : {A B : Type} {C : A → B → Type}
       → ((a : A) → (Σ b ꞉ B , C a b))
       → Σ f ꞉ (A → B) , ((a : A) → C a (f a))
-[x] = {!!}
+[x] f = (λ a → f a .pr₁) , (λ a → f a .pr₂)
 ```
 For each goal determine whether it is provable or not.
 If it is, fill it. If not, explain why it shouldn't be possible.
@@ -100,7 +102,7 @@ In the lecture we have discussed that we can't  prove `∀ {A : Type} → ¬¬ A
 What you can prove however, is
 ```agda
 tne : ∀ {A : Type} → ¬¬¬ A → ¬ A
-tne = {!!}
+tne ¬¬¬a a = ¬¬¬a (_$ a)
 ```
 
 
@@ -108,10 +110,10 @@ tne = {!!}
 Prove
 ```agda
 ¬¬-functor : {A B : Type} → (A → B) → ¬¬ A → ¬¬ B
-¬¬-functor = {!!}
+¬¬-functor f ¬¬a ¬b = ¬¬a (¬b ∘ f)
 
 ¬¬-kleisli : {A B : Type} → (A → ¬¬ B) → ¬¬ A → ¬¬ B
-¬¬-kleisli = {!!}
+¬¬-kleisli f = tne ∘ ¬¬-functor f
 ```
 Hint: For the second goal use `tne` from the previous exercise
 
@@ -131,7 +133,8 @@ to a true proposition while an uninhabited type corresponds to a false propositi
 With this in mind construct a family
 ```agda
 bool-as-type : Bool → Type
-bool-as-type = {!!}
+bool-as-type true  = 𝟙
+bool-as-type false = 𝟘
 ```
 such that `bool-as-type true` corresponds to "true" and
 `bool-as-type false` corresponds to "false". (Hint:
@@ -143,7 +146,7 @@ we have seen canonical types corresponding true and false in the lectures)
 Prove
 ```agda
 bool-≡-char₁ : ∀ (b b' : Bool) → b ≡ b' → (bool-as-type b ⇔ bool-as-type b')
-bool-≡-char₁ = {!!}
+bool-≡-char₁ _ _ (refl b) = id , id
 ```
 
 
@@ -152,7 +155,8 @@ bool-≡-char₁ = {!!}
 Using ex. 2, conclude that
 ```agda
 true≢false : ¬ (true ≡ false)
-true≢false ()
+true≢false p = bool-≡-char₁ _ _ p .pr₁ ⋆
+-- true≢false ()
 ```
 You can actually prove this much easier! How?
 
@@ -162,7 +166,10 @@ You can actually prove this much easier! How?
 Finish our characterisation of `_≡_` by proving
 ```agda
 bool-≡-char₂ : ∀ (b b' : Bool) → (bool-as-type b ⇔ bool-as-type b') → b ≡ b'
-bool-≡-char₂ = {!!}
+bool-≡-char₂ true  true  (b→b' , b'→b) = refl true
+bool-≡-char₂ true  false (b→b' , b'→b) = 𝟘-elim (b→b' ⋆)
+bool-≡-char₂ false true  (b→b' , b'→b) = 𝟘-elim (b'→b ⋆)
+bool-≡-char₂ false false (b→b' , b'→b) = refl false
 ```
 
 
@@ -178,5 +185,11 @@ Prove that
 
 ```agda
 decidable-equality-char : (A : Type) → has-decidable-equality A ⇔ has-bool-dec-fct A
-decidable-equality-char = ?
+decidable-equality-char A = lemma1 , lemma2
+  where
+    lemma1 : has-decidable-equality A → has-bool-dec-fct A
+    lemma1 x = (λ a a' → decidability-with-booleans _ .pr₁ (x a a') .pr₁) , (λ a a' → decidability-with-booleans _ .pr₁ (x a a') .pr₂)
+
+    lemma2 : has-bool-dec-fct A → has-decidable-equality A
+    lemma2 (f , prf) a a' = decidability-with-booleans _ .pr₂ (f a a' , prf a a')
 ```

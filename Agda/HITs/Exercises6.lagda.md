@@ -79,7 +79,7 @@ PathOver-constant : {l1 l2 : Level} {A : Type l1} {B : Type l2}
                   → {b1 b2 : B}
                   → b1 ≡ b2
                   → b1 ≡ b2 [ (\ _ → B) ↓ p ]
-PathOver-constant = {!!}
+PathOver-constant (refl _) (refl _) = reflo
 
 PathOver-constant-inverse : {l1 l2 : Level} {A : Type l1} {B : Type l2}
                           → {a1 a2 : A}
@@ -87,7 +87,7 @@ PathOver-constant-inverse : {l1 l2 : Level} {A : Type l1} {B : Type l2}
                           → {b1 b2 : B}
                           → b1 ≡ b2 [ (\ _ → B) ↓ p ]
                           → b1 ≡ b2
-PathOver-constant-inverse = {!!}
+PathOver-constant-inverse (refl _) reflo = refl _
 
 PathOver-constant-inverse-cancel1 : {l1 l2 : Level} {A : Type l1} {B : Type l2}
                           → {a1 a2 : A}
@@ -95,7 +95,7 @@ PathOver-constant-inverse-cancel1 : {l1 l2 : Level} {A : Type l1} {B : Type l2}
                           → {b1 b2 : B}
                           → (q : b1 ≡ b2)
                           → PathOver-constant-inverse p (PathOver-constant p q) ≡ q
-PathOver-constant-inverse-cancel1 = {!!}
+PathOver-constant-inverse-cancel1 (refl _) (refl _) = refl _
 
 PathOver-constant-inverse-cancel2 : {l1 l2 : Level} {A : Type l1} {B : Type l2}
                           → {a1 a2 : A}
@@ -103,7 +103,7 @@ PathOver-constant-inverse-cancel2 : {l1 l2 : Level} {A : Type l1} {B : Type l2}
                           → {b1 b2 : B}
                           → (q : b1 ≡ b2 [ _ ↓ p ])
                           → PathOver-constant p (PathOver-constant-inverse p q) ≡ q
-PathOver-constant-inverse-cancel2 = {!!}
+PathOver-constant-inverse-cancel2 (refl _) reflo = refl _
 
 PathOver-constant-equiv : {l1 l2 : Level} {A : Type l1} {B : Type l2}
                           → {a1 a2 : A}
@@ -126,7 +126,7 @@ ap-apd-constant : {l1 l2 : Level} {A : Type l1} {B : Type l2}
                 → (p : a1 ≡ a2)
                 → (f : A → B)
                 → ap f p ≡ PathOver-constant-inverse _ (apd f p)
-ap-apd-constant = {!!}
+ap-apd-constant (refl _) f = refl _
 ```
 
 (⋆) Define Bowtie-rec and prove the reduction for base:
@@ -137,14 +137,14 @@ Bowtie-rec : {l : Level} {X : Type l}
              (p : x ≡ x [ X ])
              (q : x ≡ x [ X ])
            → (Bowtie) → X
-Bowtie-rec {_} {X} x p q = {!!}
+Bowtie-rec {_} {X} x p q = Bowtie-elim _ x (PathOver-constant loop1 p) (PathOver-constant loop2 q)
 
 Bowtie-rec-base : {l : Level} {X : Type l}
              (x : X)
              (p : x ≡ x [ X ])
              (q : x ≡ x [ X ])
            → Bowtie-rec x p q baseB ≡ x
-Bowtie-rec-base _ _ _ = {!!}
+Bowtie-rec-base _ _ _ = refl _
 ```
 
 (⋆⋆) Prove the reductions for loop:
@@ -155,14 +155,22 @@ Bowtie-rec-loop1 : {l : Level} {X : Type l}
                (p : x ≡ x [ X ])
                (q : x ≡ x [ X ])
              → ap (Bowtie-rec x p q) loop1 ≡ p [ x ≡ x ]
-Bowtie-rec-loop1 x p q =  {!!}
+Bowtie-rec-loop1 x p q =
+  ap (Bowtie-rec x p q) loop1                                ≡⟨ ap-apd-constant _ _ ⟩
+  PathOver-constant-inverse _ (apd (Bowtie-rec x p q) loop1) ≡⟨ ap (PathOver-constant-inverse _) (Bowtie-elim-loop1 _ _ _ _) ⟩
+  PathOver-constant-inverse _ (PathOver-constant loop1 p)    ≡⟨ PathOver-constant-inverse-cancel1 _ _ ⟩
+  p                                                          ∎
 
 Bowtie-rec-loop2 : {l : Level} {X : Type l}
                    (x : X)
                    (p : x ≡ x [ X ])
                    (q : x ≡ x [ X ])
                  → ap (Bowtie-rec x p q) loop2 ≡ q [ x ≡ x ]
-Bowtie-rec-loop2 x p q = {!!}
+Bowtie-rec-loop2 x p q =
+  ap (Bowtie-rec x p q) loop2                                ≡⟨ ap-apd-constant _ _ ⟩
+  PathOver-constant-inverse _ (apd (Bowtie-rec x p q) loop2) ≡⟨ ap (PathOver-constant-inverse _) (Bowtie-elim-loop2 _ _ _ _) ⟩
+  PathOver-constant-inverse _ (PathOver-constant loop2 q)    ≡⟨ PathOver-constant-inverse-cancel1 _ _ ⟩
+  q                                                          ∎
 ```
 
 # Loop space of the bowtie 
@@ -187,12 +195,19 @@ to motivate them.
 concat-equiv : ∀ {A : Type} (a : A) {a' a'' : A}
                      → (p : a' ≡ a'')
                      → (a ≡ a') ≃ (a ≡ a'')
-concat-equiv = {!!}
+concat-equiv a p =
+  improve
+    (Isomorphism
+      (_∙ p)
+      (Inverse
+        (_∙ ! p)
+        (λ q → ! (∙assoc q p (! p)) ∙ ap (q ∙_) (!-inv-r p))
+        (λ q → ! (∙assoc q (! p) p) ∙ ap (q ∙_) (!-inv-l p))))
 
 concat-equiv-map : ∀ {A : Type} {a a' a'' : A}
                  → (p : a' ≡ a'')
                  → fwd (concat-equiv a p) ≡ \ q → q ∙ p 
-concat-equiv-map = {!!}
+concat-equiv-map (refl _) = refl _
 ```
 
 (Note: you could also write out all of the components, but this was easier.)
@@ -201,7 +216,7 @@ concat-equiv-map = {!!}
 transport-∙ : {l1 l2 : Level} {A : Type l1} {B : A → Type l2}
                   {a1 a2 a3 : A} (p : a1 ≡ a2) (q : a2 ≡ a3)
                 → transport B (p ∙ q) ∼ transport B q ∘ transport B p
-transport-∙ = {!!}
+transport-∙ (refl _) (refl _) b = refl _
 ```
 ## Calculating the loop space 
 
@@ -273,20 +288,81 @@ module AssumeF2
 proof will be analogous to the corresponding part of the Circle proof.
 
 ```agda
+    loop^, : F2 → baseB ≡ baseB
+    loop^, = F2-rec (refl _) (concat-equiv baseB loop1) (concat-equiv baseB loop2)
+
     Cover : Bowtie → Type
-    Cover = {!!}
-                  
+    Cover = Bowtie-rec F2 (ua mult1) (ua mult2)
+
+    transport-Cover-loop1 : transport Cover loop1 ∼ fwd mult1
+    transport-Cover-loop1 x =
+      transport Cover loop1 x         ≡⟨ transport-ap-assoc _ loop1 ⟩
+      transport id (ap Cover loop1) x ≡⟨ ap (λ g → transport id g _) (Bowtie-rec-loop1 _ _ _) ⟩
+      transport id (ua mult1) x       ≡⟨ uaβ mult1 ⟩
+      fwd mult1 x                     ∎
+
+    transport-Cover-loop2 : transport Cover loop2 ∼ fwd mult2
+    transport-Cover-loop2 x =
+      transport Cover loop2 x         ≡⟨ transport-ap-assoc _ loop2 ⟩
+      transport id (ap Cover loop2) x ≡⟨ ap (λ g → transport id g _) (Bowtie-rec-loop2 _ _ _) ⟩
+      transport id (ua mult2) x       ≡⟨ uaβ mult2 ⟩
+      fwd mult2 x                     ∎
+
     encode : (x : Bowtie) → baseB ≡ x → Cover x
-    encode = {!!}
+    encode _ p = transport Cover p 1F
 
     decode : (x : Bowtie) → Cover x → baseB ≡ x
-    decode = {!!}
+    decode =
+      Bowtie-elim
+        _
+        loop^,
+        (PathOver-→
+          (λ y →
+            PathOver-path-to
+              (!
+                (loop^, (transport Cover loop1 y) ≡⟨ ap loop^, (transport-Cover-loop1 _) ⟩
+                 loop^, (fwd mult1 y)             ≡⟨ F2-rec-mult1 _ _ _ _ ⟩
+                 loop^, y ∙ loop1                 ∎))))
+        (PathOver-→
+          (λ y →
+            PathOver-path-to
+              (!
+                (loop^, (transport Cover loop2 y) ≡⟨ ap loop^, (transport-Cover-loop2 _) ⟩
+                 loop^, (fwd mult2 y)             ≡⟨ F2-rec-mult2 _ _ _ _ ⟩
+                 loop^, y ∙ loop2                 ∎))))
 
     encode-decode : (x : Bowtie) (p : baseB ≡ x) → decode x (encode x p) ≡ p
-    encode-decode = {!!}
+    encode-decode _ (refl _) = F2-rec-1 _ _ _
+
+    decode-encode-baseB : encode baseB ∘ decode baseB ∼ id
+    decode-encode-baseB p =
+      encode baseB (loop^, p) ≡⟨ F2-rec-unique (encode baseB ∘ loop^,) 1F mult1 mult2 lem-1F lem-mult1 lem-mult2 p ⟩
+      F2-rec 1F mult1 mult2 p ≡⟨ ! (F2-rec-unique id 1F mult1 mult2 (refl _) (λ _ → refl _) (λ _ → refl _) p) ⟩
+      p                       ∎
+      where
+        lem-1F : encode baseB (loop^, 1F) ≡ 1F
+        lem-1F = ap (encode baseB) (F2-rec-1 _ _ _)
+
+        lem-mult1 : encode baseB ∘ (loop^, ∘ fwd mult1) ∼ fwd mult1 ∘ (encode baseB ∘ loop^,)
+        lem-mult1 p =
+          encode baseB (loop^, (fwd mult1 p))                     ≡⟨ ap (encode _) (F2-rec-mult1 _ _ _ _) ⟩
+          encode baseB (loop^, p ∙ loop1)                         ≡⟨ transport-∙ (loop^, p) loop1 1F ⟩
+          transport Cover loop1 (encode baseB (loop^, p))         ≡⟨ transport-Cover-loop1 _ ⟩
+          fwd mult1 (encode baseB (loop^, p))                     ∎
+
+        lem-mult2 : encode baseB ∘ (loop^, ∘ fwd mult2) ∼ fwd mult2 ∘ (encode baseB ∘ loop^,)
+        lem-mult2 p =
+          encode baseB (loop^, (fwd mult2 p))                     ≡⟨ ap (encode _) (F2-rec-mult2 _ _ _ _) ⟩
+          encode baseB (loop^, p ∙ loop2)                         ≡⟨ transport-∙ (loop^, p) loop2 1F ⟩
+          transport Cover loop2 (encode baseB (loop^, p))         ≡⟨ transport-Cover-loop2 _ ⟩
+          fwd mult2 (encode baseB (loop^, p))                     ∎
 
     decode-encode : (x : Bowtie) (p : Cover x) → encode x (decode x p) ≡ p
-    decode-encode = {!!}
-    
+    decode-encode =
+      Bowtie-elim
+        _
+        decode-encode-baseB
+        (PathOver-Π (λ q → fwd (transport-to-pathover _ _ _ _) (hSetF _ _ _ _)))
+        (PathOver-Π (λ q → fwd (transport-to-pathover _ _ _ _) (hSetF _ _ _ _)))
 ```
 

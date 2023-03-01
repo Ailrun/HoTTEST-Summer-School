@@ -9,8 +9,7 @@ module cubical-prelude where
 
 open import Agda.Builtin.Cubical.Path public
 open import Agda.Builtin.Cubical.Sub public
-  renaming ( inc to inS
-           ; primSubOut to outS
+  renaming ( primSubOut to outS
            )
 open import Agda.Primitive.Cubical public
   renaming ( primIMin       to _∧_  -- I → I → I
@@ -262,9 +261,22 @@ isoToPath {A = A} {B = B} f i =
 
 -- Natural numbers. We use the built in ones to be able to use
 -- numerals.
-open import introduction public
-  using (ℕ; zero; suc; _+_)
-  renaming (_*_ to _·_)
+data ℕ : Type where
+ zero : ℕ
+ suc  : ℕ → ℕ
+
+{-# BUILTIN NATURAL ℕ #-}
+
+_+_ : ℕ → ℕ → ℕ
+zero  + y = y
+suc x + y = suc (x + y)
+
+_·_ : ℕ → ℕ → ℕ
+zero  · y = 0
+suc x · y = x · y + y
+
+infixr 20 _+_
+infixr 30 _·_
 
 _-_ : ℕ → ℕ → ℕ
 n     - zero = n

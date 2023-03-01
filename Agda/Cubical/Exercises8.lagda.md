@@ -40,7 +40,7 @@ Prove the propositional computation law for `J`:
 ```agda
 JRefl : {A : Type ℓ} {x : A} (P : (z : A) → x ≡ z → Type ℓ'')
   (d : P x refl) → J P d refl ≡ d
-JRefl P d = {!!}
+JRefl P d = transportRefl d
 ```
 
 ### Exercise 2 (★★)
@@ -58,7 +58,7 @@ transport computes away at `i = i1`.
 ```agda
 fromPathP : {A : I → Type ℓ} {x : A i0} {y : A i1} →
   PathP A x y → transport (λ i → A i) x ≡ y
-fromPathP {A = A} p i = {!!}
+fromPathP {A = A} p i = transp (λ j → A (i ∨ j)) i (p i)
 ```
 
 ### Exercise 3 (★★★)
@@ -87,9 +87,9 @@ toPathP : {A : I → Type ℓ} {x : A i0} {y : A i1} →
   transport (λ i → A i) x ≡ y → PathP A x y
 toPathP {A = A} {x = x} p i =
   hcomp
-    (λ {j (i = i0) → {!!} ;
-        j (i = i1) → {!!} })
-   {!!}
+    (λ {j (i = i0) → x ;
+        j (i = i1) → p j })
+    (transp (λ j → A (i ∧ j)) (~ i) x)
 ```
 
 ### Exercise 4 (★)
@@ -100,7 +100,7 @@ lines in hProps, provided their boundary.
 ```agda
 isProp→PathP : {A : I → Type ℓ} (p : (i : I) → isProp (A i))
   (a₀ : A i0) (a₁ : A i1) → PathP A a₀ a₁
-isProp→PathP p a₀ a₁ = {!!}
+isProp→PathP p a₀ a₁ = toPathP (p i1 _ a₁)
 ```
 
 ### Exercise 5 (★★)
@@ -110,7 +110,7 @@ Prove the following lemma charictarising equality in subtypes:
 ```agda
 Σ≡Prop : {A : Type ℓ} {B : A → Type ℓ'} {u v : Σ A B} (h : (x : A) → isProp (B x))
        → (p : pr₁ u ≡ pr₁ v) → u ≡ v
-Σ≡Prop {B = B} {u = u} {v = v} h p = {!!}
+Σ≡Prop {B = B} {u = u} {v = v} h p = ΣPathP (p , isProp→PathP (λ i → h (p i)) (pr₂ u) (pr₂ v))
 ```
 
 ### Exercise 6 (★★★)
@@ -122,5 +122,13 @@ This requires drawing a cube (yes, an actual 3D one)!
 
 ```agda
 isPropIsContr : {A : Type ℓ} → isProp (isContr A)
-isPropIsContr (c0 , h0) (c1 , h1) j = {!!} 
+isPropIsContr {A = A} (c0 , h0) (c1 , h1) j =
+    h0 c1 j
+  , λ y i →
+    hcomp
+      (λ { k (j = i0) → h0 (h1 y k) i
+         ; k (j = i1) → h1 y (i ∧ k)
+         ; k (i = i0) → h0 c1 j
+         ; k (i = i1) → h1 y k })
+      (h0 c1 (i ∨ j))
 ```
